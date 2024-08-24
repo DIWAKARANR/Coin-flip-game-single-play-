@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magical Coin Toss Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(-45deg, #8A2BE2, #FFB6C1, #00FF7F);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .game-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -50%); }
+            50% { transform: translate(-50%, -52%); }
+        }
+        #coin {
+            width: 150px;
+            height: 150px;
+            margin: 20px auto;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        #coin div {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: absolute;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        .heads {
+            background: radial-gradient(circle at 30% 30%, #ffd700, #ffcc00);
+            color: #fff;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        .tails {
+            background: radial-gradient(circle at 30% 30%, #c0c0c0, #a0a0a0);
+            color: #fff;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            transform: rotateY(180deg);
+        }
+        @keyframes flip {
+            0% { transform: rotateY(0) rotateX(0); }
+            100% { transform: rotateY(1800deg) rotateX(1800deg); }
+        }
+        .animate-flip {
+            animation: flip 3s ease-out forwards;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        button:hover {
+            background-color: #45a049;
+            animation: none;
+            transform: scale(1.1);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        .sparkle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: #fff;
+            pointer-events: none;
+            opacity: 0;
+        }
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1) rotate(180deg); opacity: 0; }
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0; }
+        }
+        .firework {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        @keyframes firework {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(30); opacity: 0.5; }
+            100% { transform: scale(40); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    <div class="game-container">
+        <h1 style="color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5);">Magical Coin Toss</h1>
+        <div id="choice">
+            <button onclick="setChoice('Heads')">Choose Heads</button>
+            <button onclick="setChoice('Tails')">Choose Tails</button>
+        </div>
+        <div id="coin">
+            <div class="heads">H</div>
+            <div class="tails">T</div>
+        </div>
+        <button id="flipButton" onclick="flipCoin()" disabled>Flip Coin</button>
+        <button onclick="resetGame()">Reset</button>
+        <div id="result"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        particlesJS('particles-js', {
+            "particles": {
+                "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#ffffff" },
+                "shape": {
+                    "type": "circle",
+                    "stroke": { "width": 0, "color": "#000000" },
+                    "polygon": { "nb_sides": 5 },
+                },
+                "opacity": {
+                    "value": 0.5,
+                    "random": true,
+                    "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false }
+                },
+                "size": {
+                    "value": 3,
+                    "random": true,
+                    "anim": { "enable": true, "speed": 40, "size_min": 0.1, "sync": false }
+                },
+                "line_linked": {
+                    "enable": true,
+                    "distance": 150,
+                    "color": "#ffffff",
+                    "opacity": 0.4,
+                    "width": 1
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 6,
+                    "direction": "none",
+                    "random": false,
+                    "straight": false,
+                    "out_mode": "out",
+                    "bounce": false,
+                    "attract": { "enable": false, "rotateX": 600, "rotateY": 1200 }
+                }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": { "enable": true, "mode": "repulse" },
+                    "onclick": { "enable": true, "mode": "push" },
+                    "resize": true
+                },
+                "modes": {
+                    "grab": { "distance": 400, "line_linked": { "opacity": 1 } },
+                    "bubble": { "distance": 400, "size": 40, "duration": 2, "opacity": 8, "speed": 3 },
+                    "repulse": { "distance": 200, "duration": 0.4 },
+                    "push": { "particles_nb": 4 },
+                    "remove": { "particles_nb": 2 }
+                }
+            },
+            "retina_detect": true
+        });
+
+        let playerChoice = '';
+        let flipping = false;
+
+        function setChoice(choice) {
+            playerChoice = choice;
+            document.getElementById('flipButton').disabled = false;
+            document.getElementById('result').textContent = `You chose ${choice}. Click 'Flip Coin' to play!`;
+            document.getElementById('result').style.transform = 'scale(1.1)';
+            setTimeout(() => document.getElementById('result').style.transform = 'scale(1)', 300);
+        }
+
+        function flipCoin() {
+            if (flipping || !playerChoice) return;
+            flipping = true;
+
+            const coin = document.getElementById('coin');
+            const result = document.getElementById('result');
+            
+            coin.classList.add('animate-flip');
+            result.textContent = 'Flipping...';
+
+            setTimeout(() => {
+                const randomNumber = Math.random();
+                const coinSide = randomNumber < 0.5 ? 'Heads' : 'Tails';
+
+                coin.style.transform = coinSide === 'Heads' ? 'rotateY(1800deg) rotateX(1800deg)' : 'rotateY(1980deg) rotateX(1980deg)';
+
+                let resultText = `The coin landed on ${coinSide}. `;
+                if (playerChoice === coinSide) {
+                    resultText += "You win!";
+                    result.style.color = '#4CAF50';
+                    createSparkles();
+                    createConfetti();
+                    createFireworks();
+                } else {
+                    resultText += "You lose!";
+                    result.style.color = '#FF5252';
+                }
+
+                result.textContent = resultText;
+                result.style.transform = 'scale(1.2)';
+                flipping = false;
+
+                setTimeout(() => {
+                    result.style.transform = 'scale(1)';
+                }, 500);
+            }, 3000);
+        }
+
+        function resetGame() {
+            const coin = document.getElementById('coin');
+            const result = document.getElementById('result');
+
+            coin.classList.remove('animate-flip');
+            coin.style.transform = 'rotateY(0deg) rotateX(0deg)';
+            result.textContent = '';
+            result.style.color = '#fff';
+            playerChoice = '';
+            document.getElementById('flipButton').disabled = true;
+            removeSparkles();
+            removeConfetti();
+            removeFireworks();
+        }
+
+        function createSparkles() {
+            for (let i = 0; i < 50; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.classList.add('sparkle');
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.animationDuration = Math.random() * 1 + 0.5 + 's';
+                sparkle.style.animationDelay = Math.random() * 1 + 's';
+                document.body.appendChild(sparkle);
+                sparkle.style.animation = 'sparkle 1s ease-in-out forwards';
+            }
+        }
+
+        function removeSparkles() {
+            const sparkles = document.querySelectorAll('.sparkle');
+            sparkles.forEach(s => s.remove());
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-5%';
+                confetti.style.backgroundColor = ['#f2d74e', '#95c3de', '#ff9a91'][Math.floor(Math.random() * 3)];
+                confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+                confetti.style.animation = 'confettiFall 3s ease-in-out forwards';
+            }
+        }
+
+        function removeConfetti() {
+            const confetti = document.querySelectorAll('.confetti');
+            confetti.forEach(c => c.remove());
+        }
+
+        function createFireworks() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const firework = document.createElement('div');
+                    firework.classList.add('firework');
+                    firework.style.left = Math.random() * 100 + '%';
+                    firework.style.top = Math.random() * 100 + '%';
+                    firework.style.backgroundColor = ['#ff0', '#f0f', '#0ff'][Math.floor(Math.random() * 3)];
+                    document.body.appendChild(firework);
+                    firework.style.animation = 'firework 1s ease-out forwards';
+                    setTimeout(() => firework.remove(), 1000);
+                }, i * 200);
+            }
+        }
+
+        function removeFireworks() {
+            const fireworks = document.querySelectorAll('.firework');
+            fireworks.forEach(f => f.remove());
+        }
+    </script>
+</body>
+  </html>
